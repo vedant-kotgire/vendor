@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Interactive vendor scoring dashboard for Ishanaa's kurta production sourcing — adjustable priority weights, ranked shortlist, and a sortable comparison table.">
+<title>Ishanaa — Vendor Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --indigo:#22314F;
+    --indigo-deep:#16223A;
+    --marigold:#D98F1F;
+    --rose:#A2394C;
+    --canvas:#F6F1E6;
+    --panel:#FFFFFF;
+    --ink:#1C1B18;
+    --ink-soft:#6E6558;
+    --line:rgba(28,27,24,0.14);
+    --line-strong:rgba(28,27,24,0.28);
+    --approved:#3D6B54;
+    --approved-bg:#E4EEE7;
+    --sampled:#8A5A12;
+    --sampled-bg:#F5E7CC;
+    --contacted:#2E4A73;
+    --contacted-bg:#E4E9F2;
+    --new:#5B564C;
+    --new-bg:#EBE7DD;
+    --rejected:#8C2E3E;
+    --rejected-bg:#F3DEE1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas:#15161B;
+      --panel:#1D1F26;
+      --ink:#EDEAE1;
+      --ink-soft:#A7A196;
+      --line:rgba(237,234,225,0.14);
+      --line-strong:rgba(237,234,225,0.28);
+      --indigo:#5A7AB8;
+      --indigo-deep:#2B3B5C;
+      --approved-bg:#1E2C24;
+      --sampled-bg:#332C1C;
+      --contacted-bg:#1F2733;
+      --new-bg:#2A2924;
+      --rejected-bg:#2E1E21;
+    }
+  }
+  :root[data-theme="dark"]{
+    --canvas:#15161B;
+    --panel:#1D1F26;
+    --ink:#EDEAE1;
+    --ink-soft:#A7A196;
+    --line:rgba(237,234,225,0.14);
+    --line-strong:rgba(237,234,225,0.28);
+    --indigo:#5A7AB8;
+    --indigo-deep:#2B3B5C;
+    --approved-bg:#1E2C24;
+    --sampled-bg:#332C1C;
+    --contacted-bg:#1F2733;
+    --new-bg:#2A2924;
+    --rejected-bg:#2E1E21;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--canvas);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{background:var(--marigold); color:#1C1B18;}
+
+  a{color:inherit;}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 28px 80px;}
+
+  /* ---------- Header ---------- */
+  header.top{
+    background:var(--indigo-deep);
+    color:#F3EFE4;
+    padding:22px 28px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  header.top .wordmark{
+    font-family:"Fraunces", Georgia, serif;
+    font-size:22px;
+    font-weight:600;
+    letter-spacing:0.01em;
+  }
+  header.top .wordmark span{color:var(--marigold);}
+  header.top .tagline{
+    font-size:13px;
+    color:#C8C2B4;
+  }
+  .theme-toggle{
+    background:transparent;
+    border:1px solid rgba(243,239,228,0.35);
+    color:#F3EFE4;
+    font-size:11.5px;
+    padding:6px 12px;
+    border-radius:100px;
+    cursor:pointer;
+    font-family:"IBM Plex Sans", sans-serif;
+  }
+  .theme-toggle:hover{ border-color:#F3EFE4; }
+  .top-right{ display:flex; align-items:center; gap:14px; }
+
+  .wrap{ animation:rise .5s ease both; }
+  @keyframes rise{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .wrap{ animation:none; }
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    padding:56px 0 40px;
+    display:grid;
+    grid-template-columns:1.3fr 1fr;
+    gap:48px;
+    align-items:end;
+    border-bottom:1px solid var(--line);
+  }
+  .hero h1{
+    font-family:"Fraunces", Georgia, serif;
+    font-weight:500;
+    font-size:clamp(28px, 4vw, 40px);
+    line-height:1.15;
+    margin:0 0 14px;
+    max-width:520px;
+  }
+  .hero p.lede{
+    font-size:15px;
+    color:var(--ink-soft);
+    max-width:480px;
+    line-height:1.6;
+    margin:0;
+  }
+  .hero-figure{
+    text-align:right;
+  }
+  .hero-figure .num{
+    font-family:"Fraunces", Georgia, serif;
+    font-size:76px;
+    font-weight:500;
+    line-height:1;
+    color:var(--indigo);
+  }
+  :root[data-theme="dark"] .hero-figure .num{ color:var(--marigold); }
+  .hero-figure .label{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+  .hero-figure .name{
+    font-size:16px;
+    font-weight:600;
+    margin-top:2px;
+  }
+
+  /* ---------- KPI strip ---------- */
+  .kpis{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    border-bottom:1px solid var(--line);
+  }
+  .kpi{
+    padding:22px 24px;
+    border-right:1px solid var(--line);
+  }
+  .kpi:last-child{border-right:none;}
+  .kpi .k-label{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .kpi .k-value{
+    font-size:26px;
+    font-weight:600;
+    font-family:"IBM Plex Mono", monospace;
+  }
+
+  /* ---------- Section titles ---------- */
+  h2.section-title{
+    font-family:"Fraunces", Georgia, serif;
+    font-weight:500;
+    font-size:20px;
+    margin:48px 0 4px;
+  }
+  p.section-sub{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0 0 22px;
+    max-width:560px;
+    line-height:1.5;
+  }
+
+  /* ---------- Weights panel ---------- */
+  .weights{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:22px;
+    padding:24px;
+    background:var(--panel);
+    border:1px solid var(--line);
+  }
+  .weight-item label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    margin-bottom:2px;
+  }
+  .weight-item .pct{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12px;
+    color:var(--marigold);
+    display:block;
+    margin-bottom:8px;
+  }
+  input[type="range"]{
+    -webkit-appearance:none;
+    width:100%;
+    height:2px;
+    background:var(--line-strong);
+    outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:14px; height:14px;
+    border-radius:50%;
+    background:var(--indigo);
+    border:2px solid var(--panel);
+    box-shadow:0 0 0 1px var(--indigo);
+    cursor:pointer;
+  }
+  :root[data-theme="dark"] input[type="range"]::-webkit-slider-thumb{ background:var(--marigold); box-shadow:0 0 0 1px var(--marigold); }
+  input[type="range"]::-moz-range-thumb{
+    width:14px; height:14px;
+    border-radius:50%;
+    background:var(--indigo);
+    border:2px solid var(--panel);
+    cursor:pointer;
+  }
+
+  /* ---------- Filter chips ---------- */
+  .filters{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:22px 0 28px;
+  }
+  .chip{
+    font-size:12.5px;
+    padding:6px 14px;
+    border:1px solid var(--line-strong);
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+    border-radius:100px;
+    font-family:"IBM Plex Sans", sans-serif;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .chip.active{
+    background:var(--indigo);
+    border-color:var(--indigo);
+    color:#fff;
+  }
+  :root[data-theme="dark"] .chip.active{ background:var(--marigold); border-color:var(--marigold); color:#1C1B18; }
+
+  /* ---------- Ranked bars ---------- */
+  .ranked{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    margin-bottom:8px;
+  }
+  .rank-row{
+    display:grid;
+    grid-template-columns:26px 200px 1fr 56px;
+    align-items:center;
+    gap:14px;
+    padding:10px 4px;
+    border-bottom:1px solid var(--line);
+  }
+  .rank-row .rk{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .rank-row .vname{
+    font-size:13.5px;
+    font-weight:600;
+  }
+  .rank-row .vloc{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-weight:400;
+    display:block;
+  }
+  .bartrack{
+    height:8px;
+    background:var(--line);
+    position:relative;
+    overflow:hidden;
+  }
+  .barfill{
+    height:100%;
+    background:var(--indigo);
+    transition:width .35s ease;
+  }
+  .barfill.hyd{ background:var(--marigold); }
+  .rank-row .score{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:13px;
+    text-align:right;
+    font-weight:600;
+  }
+
+  .legend-note{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin:10px 0 0;
+  }
+  .legend-note .dot{
+    display:inline-block;
+    width:8px; height:8px;
+    border-radius:50%;
+    background:var(--marigold);
+    margin-right:5px;
+    position:relative;
+    top:-1px;
+  }
+
+  /* ---------- Table ---------- */
+  .table-scroll{
+    overflow-x:auto;
+    border:1px solid var(--line);
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+    min-width:960px;
+  }
+  thead th{
+    text-align:left;
+    padding:12px 14px;
+    background:var(--indigo-deep);
+    color:#F3EFE4;
+    font-weight:500;
+    font-size:11.5px;
+    white-space:nowrap;
+    cursor:pointer;
+    user-select:none;
+  }
+  thead th:hover{ background:var(--indigo); }
+  thead th .arrow{ opacity:0.5; margin-left:4px; font-size:10px; }
+  tbody td{
+    padding:11px 14px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  tbody td.notes{ white-space:normal; min-width:220px; color:var(--ink-soft); }
+  tbody tr:hover{ background:rgba(217,143,31,0.06); }
+  .vendor-cell{ font-weight:600; }
+  .loc-tag{ font-size:11px; color:var(--ink-soft); display:block; font-weight:400; }
+  .status-chip{
+    font-size:11px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:100px;
+    white-space:nowrap;
+  }
+  .status-Approved{ background:var(--approved-bg); color:var(--approved); }
+  .status-Sampled{ background:var(--sampled-bg); color:var(--sampled); }
+  .status-Contacted{ background:var(--contacted-bg); color:var(--contacted); }
+  .status-New{ background:var(--new-bg); color:var(--new); }
+  .status-Rejected{ background:var(--rejected-bg); color:var(--rejected); }
+
+  footer{
+    margin-top:56px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    font-size:12px;
+    color:var(--ink-soft);
+    line-height:1.6;
+  }
+
+  @media (max-width:800px){
+    .hero{grid-template-columns:1fr; gap:20px;}
+    .hero-figure{text-align:left;}
+    .kpis{grid-template-columns:1fr 1fr;}
+    .kpi:nth-child(2){border-right:none;}
+    .weights{grid-template-columns:1fr 1fr;}
+    .rank-row{grid-template-columns:20px 120px 1fr 44px; gap:8px;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .barfill{ transition:none; }
+    .chip{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wordmark">ISHANAA <span>·</span> Vendor Intelligence</div>
+  <div class="top-right">
+    <div class="tagline">Fabric &amp; production sourcing, ranked</div>
+    <button class="theme-toggle" id="themeToggle" type="button">Dark mode</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <div>
+      <h1>Ten vendors, one ranked shortlist — adjust what matters and watch it re-sort.</h1>
+      <p class="lede">Every quote, sample and callback we've logged for the current kurta run, scored against the criteria that actually decide who gets the PO.</p>
+    </div>
+    <div class="hero-figure">
+      <div class="num" id="topScore">–</div>
+      <div class="label">Current top score</div>
+      <div class="name" id="topName">–</div>
+    </div>
+  </section>
+
+  <section class="kpis">
+    <div class="kpi">
+      <div class="k-label">Vendors tracked</div>
+      <div class="k-value" id="kpiCount">–</div>
+    </div>
+    <div class="kpi">
+      <div class="k-label">Approved</div>
+      <div class="k-value" id="kpiApproved">–</div>
+    </div>
+    <div class="kpi">
+      <div class="k-label">Average score</div>
+      <div class="k-value" id="kpiAvg">–</div>
+    </div>
+    <div class="kpi">
+      <div class="k-label">Fastest lead time</div>
+      <div class="k-value" id="kpiFastest">–</div>
+    </div>
+  </section>
+
+  <h2 class="section-title">Set your priorities</h2>
+  <p class="section-sub">These sliders set relative importance, not fixed percentages — move any of them and the shares below recompute, and every vendor's score and rank updates instantly.</p>
+  <div class="weights" id="weightsPanel"></div>
+
+  <h2 class="section-title">Ranked shortlist</h2>
+  <p class="section-sub">Sorted by weighted score, highest first.</p>
+  <div class="filters" id="filterChips"></div>
+  <div class="ranked" id="rankedList"></div>
+  <p class="legend-note"><span class="dot"></span>Hyderabad-based vendor — same city as our production base</p>
+
+  <h2 class="section-title">Full comparison</h2>
+  <p class="section-sub">Click a column header to sort. Status tracks where each vendor sits in the pipeline.</p>
+  <div class="table-scroll">
+    <table id="vendorTable">
+      <thead>
+        <tr>
+          <th data-key="name">Vendor <span class="arrow"></span></th>
+          <th data-key="category">Category <span class="arrow"></span></th>
+          <th data-key="moq">MOQ <span class="arrow"></span></th>
+          <th data-key="quote">Quote (₹/unit) <span class="arrow"></span></th>
+          <th data-key="lead">Lead time <span class="arrow"></span></th>
+          <th data-key="terms">Payment terms <span class="arrow"></span></th>
+          <th data-key="score">Score <span class="arrow"></span></th>
+          <th data-key="status">Status <span class="arrow"></span></th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <footer>
+    Ratings (quality, reliability, communication, price, speed) are entered on a 1–5 scale after a call or sample and are fixed per vendor. The sliders above only change how those five ratings are weighted into the final score — nothing here edits the underlying vendor data. Sample data shown; swap in the <code>vendors</code> array in the page source with real quotes before relying on this.
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  const toggle = document.getElementById("themeToggle");
+  function applyTheme(t){
+    if (t === "dark"){ document.documentElement.setAttribute("data-theme","dark"); toggle.textContent = "Light mode"; }
+    else { document.documentElement.setAttribute("data-theme","light"); toggle.textContent = "Dark mode"; }
+  }
+  let saved = null;
+  try { saved = localStorage.getItem("ishanaa-theme"); } catch(e) {}
+  applyTheme(saved === "dark" ? "dark" : "light");
+  toggle.addEventListener("click", () => {
+    const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("ishanaa-theme", next); } catch(e) {}
+  });
+
+  const vendors = [
+    {name:"Meherchand Textiles", location:"Jaipur", category:"Block-print fabric", moq:200, quote:410, lead:12, terms:"50% advance / 50% on dispatch", quality:5, reliability:4, communication:4, price:3, speed:4, status:"Sampled", notes:"Strong hand-block quality; slightly pricier."},
+    {name:"Deccan Loom Works", location:"Hyderabad", category:"Handloom cotton + Ikat", moq:250, quote:365, lead:9, terms:"40% advance / balance net 15", quality:4, reliability:4, communication:4, price:4, speed:5, status:"Approved", notes:"Local to HQ — fastest turnaround for sample runs."},
+    {name:"Suvarna Fabrics Co.", location:"Surat", category:"Mixed fabric + trims", moq:150, quote:395, lead:10, terms:"30% advance / 70% net 15", quality:4, reliability:4, communication:5, price:3, speed:4, status:"Approved", notes:"Best communication of the group; responsive owner."},
+    {name:"Charminar Chikan House", location:"Hyderabad", category:"Chikankari embroidery", moq:100, quote:505, lead:16, terms:"50% advance / balance on delivery", quality:5, reliability:3, communication:4, price:2, speed:3, status:"Sampled", notes:"Premium craft, easy to visit in person."},
+    {name:"Rajwada Weaves", location:"Jodhpur", category:"Handloom cotton", moq:300, quote:350, lead:18, terms:"40% advance / balance on delivery", quality:4, reliability:3, communication:3, price:4, speed:2, status:"Contacted", notes:"Good rates, lead time inconsistent last cycle."},
+    {name:"Om Shree Garments", location:"Jaipur", category:"Cut & sew / stitching", moq:400, quote:280, lead:9, terms:"Net 30", quality:3, reliability:5, communication:4, price:5, speed:5, status:"Approved", notes:"Most reliable stitching partner to date."},
+    {name:"Golconda Textile Studio", location:"Hyderabad", category:"Digital print fabric", moq:200, quote:355, lead:8, terms:"30% advance / 70% net 15", quality:4, reliability:4, communication:4, price:4, speed:5, status:"New", notes:"Newer relationship, strong first sample."},
+    {name:"Kalaghoda Print House", location:"Ahmedabad", category:"Digital + block print", moq:250, quote:375, lead:14, terms:"50% advance / 50% on dispatch", quality:4, reliability:4, communication:3, price:4, speed:3, status:"Sampled", notes:"Solid mid-tier option, decent backup vendor."},
+    {name:"Zari & Co. Textiles", location:"Lucknow", category:"Chikankari embroidery", moq:100, quote:520, lead:21, terms:"60% advance / balance on delivery", quality:5, reliability:3, communication:2, price:2, speed:2, status:"Contacted", notes:"Premium craft, slow and hard to reach."},
+    {name:"Indigo Loom Studio", location:"Bhuj", category:"Handloom + natural dye", moq:120, quote:460, lead:20, terms:"50% advance / 50% on dispatch", quality:5, reliability:3, communication:3, price:2, speed:2, status:"New", notes:"Beautiful fabric, new relationship — untested."}
+  ];
+
+  const criteria = [
+    {key:"quality", label:"Quality", init:25},
+    {key:"reliability", label:"Reliability", init:25},
+    {key:"communication", label:"Communication", init:15},
+    {key:"price", label:"Price competitiveness", init:20},
+    {key:"speed", label:"Speed / lead time", init:15}
+  ];
+  const weightState = {};
+  criteria.forEach(c => weightState[c.key] = c.init);
+
+  let activeFilter = "All";
+  let sortKey = "score";
+  let sortDir = -1;
+
+  const weightsPanel = document.getElementById("weightsPanel");
+  criteria.forEach(c => {
+    const item = document.createElement("div");
+    item.className = "weight-item";
+    item.innerHTML = `
+      <label for="w-${c.key}">${c.label}</label>
+      <span class="pct" id="pct-${c.key}"></span>
+      <input type="range" id="w-${c.key}" min="0" max="50" step="1" value="${c.init}">
+    `;
+    weightsPanel.appendChild(item);
+    item.querySelector("input").addEventListener("input", e => {
+      weightState[c.key] = Number(e.target.value);
+      render();
+    });
+  });
+
+  function normalizedWeights(){
+    const total = Object.values(weightState).reduce((a,b)=>a+b,0) || 1;
+    const norm = {};
+    criteria.forEach(c => norm[c.key] = weightState[c.key] / total);
+    return norm;
+  }
+
+  function scored(){
+    const w = normalizedWeights();
+    return vendors.map(v => ({
+      ...v,
+      score: v.quality*w.quality + v.reliability*w.reliability + v.communication*w.communication + v.price*w.price + v.speed*w.speed
+    }));
+  }
+
+  const locations = ["All", ...Array.from(new Set(vendors.map(v=>v.location))).sort()];
+  const filterChips = document.getElementById("filterChips");
+  locations.forEach(loc => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (loc === "All" ? " active" : "");
+    chip.textContent = loc;
+    chip.dataset.loc = loc;
+    chip.addEventListener("click", () => {
+      activeFilter = loc;
+      [...filterChips.children].forEach(c => c.classList.toggle("active", c.dataset.loc === loc));
+      render();
+    });
+    filterChips.appendChild(chip);
+  });
+
+  document.querySelectorAll("#vendorTable thead th[data-key]").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      if (sortKey === key){ sortDir *= -1; } else { sortKey = key; sortDir = key === "name" || key === "terms" || key === "status" || key === "category" ? 1 : -1; }
+      render();
+    });
+  });
+
+  function render(){
+    const data = scored();
+    const filtered = activeFilter === "All" ? data : data.filter(v => v.location === activeFilter);
+
+    // update weight percentage labels
+    const w = normalizedWeights();
+    criteria.forEach(c => {
+      document.getElementById(`pct-${c.key}`).textContent = Math.round(w[c.key]*100) + "%";
+    });
+
+    // hero + KPIs (always computed on full unfiltered set)
+    const ranked = [...data].sort((a,b)=>b.score-a.score);
+    document.getElementById("topScore").textContent = ranked[0].score.toFixed(2);
+    document.getElementById("topName").textContent = ranked[0].name;
+    document.getElementById("kpiCount").textContent = data.length;
+    document.getElementById("kpiApproved").textContent = data.filter(v=>v.status==="Approved").length;
+    document.getElementById("kpiAvg").textContent = (data.reduce((s,v)=>s+v.score,0)/data.length).toFixed(2);
+    document.getElementById("kpiFastest").textContent = Math.min(...data.map(v=>v.lead)) + "d";
+
+    // ranked bar list (filtered)
+    const rankedFiltered = [...filtered].sort((a,b)=>b.score-a.score);
+    const maxScore = 5;
+    const rankedList = document.getElementById("rankedList");
+    rankedList.innerHTML = "";
+    rankedFiltered.forEach((v, i) => {
+      const row = document.createElement("div");
+      row.className = "rank-row";
+      row.innerHTML = `
+        <div class="rk">${i+1}</div>
+        <div><span class="vname">${v.name}</span><span class="vloc">${v.location}</span></div>
+        <div class="bartrack"><div class="barfill ${v.location==='Hyderabad'?'hyd':''}" style="width:${(v.score/maxScore*100).toFixed(1)}%"></div></div>
+        <div class="score">${v.score.toFixed(2)}</div>
+      `;
+      rankedList.appendChild(row);
+    });
+
+    // table (filtered + sorted)
+    const tableData = [...filtered].sort((a,b)=>{
+      let av = a[sortKey], bv = b[sortKey];
+      if (typeof av === "string"){ av = av.toLowerCase(); bv = bv.toLowerCase(); return av < bv ? -1*sortDir : av > bv ? 1*sortDir : 0; }
+      return (av - bv) * sortDir;
+    });
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+    tableData.forEach(v => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="vendor-cell">${v.name}<span class="loc-tag">${v.location}</span></td>
+        <td>${v.category}</td>
+        <td>${v.moq}</td>
+        <td>₹${v.quote}</td>
+        <td>${v.lead}d</td>
+        <td>${v.terms}</td>
+        <td>${v.score.toFixed(2)}</td>
+        <td><span class="status-chip status-${v.status}">${v.status}</span></td>
+        <td class="notes">${v.notes}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  render();
+})();
+</script>
+
+</body>
+</html>
